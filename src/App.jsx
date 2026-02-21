@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 // ─── !! PASTE YOUR REPLIT URL HERE WHEN READY !! ─────────────────────────────
 const BACKEND_URL = "https://a28b8a38-0246-4574-986c-e23f05fe06b3-00-2cyzbggdrxyer.picard.replit.dev";
@@ -160,7 +161,7 @@ function safeParseJSON(raw) {
 function parseAssessment(text) {
   const defs = [
     { header: "THREAT ASSESSMENT", icon: "⚠", color: "#e05252" },
-    { header: "THE IDENTITY TRAP", icon: "◎", color: "#e0a852" },
+    { header: "THE IDENTITY TRAP", icon: "���", color: "#e0a852" },
     { header: "YOUR SURVIVAL ARCHITECTURE", icon: "◈", color: "#52b4e0" },
     { header: "THE DEEPER QUESTION", icon: "∞", color: "#a076f9" },
   ];
@@ -482,7 +483,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ══ RESULT ══ */}
+        {/* ══ RESULT ═��� */}
         {stage === "result" && (
           <div className="fade-in" style={{ maxWidth:860,margin:"0 auto",padding:"72px 24px 100px",width:"100%" }}>
 
@@ -629,6 +630,7 @@ export default function App() {
         )}
 
       </div>
+      <Analytics />
     </>
   );
 }
