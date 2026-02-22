@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
 // ─── !! PASTE YOUR REPLIT URL HERE WHEN READY !! ─────────────────────────────
-const BACKEND_URL = "https://a28b8a38-0246-4574-986c-e23f05fe06b3-00-2cyzbggdrxyer.picard.replit.dev";
+const BACKEND_URL = "agi-coach.thomzy07.workers.dev";
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── CURRICULUM ──────────────────────────────────────────────────────────────
