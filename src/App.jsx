@@ -132,7 +132,7 @@ Write every email as if you know this specific person's job intimately. Make it 
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-async function callClaude(systemPrompt, userMessage) {
+async function callClaude(systemPrompt, userMessage, maxTokens = 1000) {
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -142,7 +142,7 @@ async function callClaude(systemPrompt, userMessage) {
     body: JSON.stringify({
       model: "llama-3.3-70b-versatile",
       temperature: 0.72,
-      max_tokens: 1000,
+      max_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user",   content: userMessage },
@@ -150,6 +150,7 @@ async function callClaude(systemPrompt, userMessage) {
     }),
   });
   const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
   return data.choices?.[0]?.message?.content || "";
 }
 
@@ -296,7 +297,7 @@ export default function App() {
     for (const phase of PHASES) {
       setPhaseStatus(ps => ({ ...ps, [phase.id]: "generating" }));
       try {
-        const raw = await callClaude("You are Jinshi, AGI transitions coach. You write warm, direct, personalised coaching emails.", buildBatchPrompt(phase, desc));
+        const raw = await callClaude("You are Jinshi, AGI transitions coach. You write warm, direct, personalised coaching emails.", buildBatchPrompt(phase, desc), 4000);
         const parsed = safeParseJSON(raw);
         if (parsed && parsed.length > 0) {
           setPhaseEmails(pe => ({ ...pe, [phase.id]: parsed }));
