@@ -1,87 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
-// ─── !! PASTE YOUR REPLIT URL HERE WHEN READY !! ─────────────────────────────
 const BACKEND_URL = "https://agi-backend.thomzy07.workers.dev";
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ─── CURRICULUM ──────────────────────────────────────────────────────────────
-// 4 phases × ~6 emails = ~24 emails, strategically spaced over 100 days
-// Batched so each phase generates independently and renders progressively
-
-const PHASES = [
-  {
-    id: "phase1",
-    label: "Phase 1 — Wake Up",
-    subtitle: "Days 1–20 · The Honest Reckoning",
-    color: "#e05252",
-    icon: "⚠",
-    description: "Shock absorption, threat clarity, and your very first moves.",
-    days: [1, 3, 5, 8, 12, 17, 20],
-    themes: [
-      "Day 1 — Your First Move This Week: one concrete action based on their specific role",
-      "Day 3 — The Machines Are Already Here: specific AI tools already doing parts of their job right now",
-      "Day 5 — What You're Actually Good At: identifying transferable human strengths beneath the job title",
-      "Day 8 — The Skill Gap Audit: an honest self-assessment exercise mapping current vs. needed skills",
-      "Day 12 — Pick One Skill. Just One: the single most important capability to develop, with a learning path",
-      "Day 17 — Your First Week of Learning: a daily micro-habit for skill acquisition that takes under 20 minutes",
-      "Day 20 — Check In: how do you feel? Normalising the discomfort of transition",
-    ],
-  },
-  {
-    id: "phase2",
-    label: "Phase 2 — Rebuild",
-    subtitle: "Days 21–50 · Identity & Skills",
-    color: "#e0a852",
-    icon: "◈",
-    description: "Decoupling worth from job title. Building new capabilities.",
-    days: [21, 25, 30, 35, 40, 45, 50],
-    themes: [
-      "Day 21 — Who Are You Without Your Title? A journaling exercise to explore identity beyond career",
-      "Day 25 — The Comparison Trap: why watching colleagues get displaced triggers shame, and how to redirect it",
-      "Day 30 — Your Human Moat: the 3 qualities about you that AGI will never replicate — and how to lean into them",
-      "Day 35 — Mid-Point Skill Check: celebrating progress, adjusting the learning plan",
-      "Day 40 — Relationships as Infrastructure: how to build professional trust that outlasts any technology shift",
-      "Day 45 — The Story You Tell Yourself: rewriting the internal narrative from 'threatened' to 'transitioning'",
-      "Day 50 — Half-Time Report: what's shifted in 50 days? A structured self-reflection exercise",
-    ],
-  },
-  {
-    id: "phase3",
-    label: "Phase 3 — Reposition",
-    subtitle: "Days 51–80 · Your New Value Proposition",
-    color: "#52b4e0",
-    icon: "◎",
-    description: "Crafting your hybrid human-AI role. Going on offence.",
-    days: [51, 55, 60, 65, 70, 75, 80],
-    themes: [
-      "Day 51 — The Hybrid Worker Advantage: how to position yourself as someone who directs AI, not competes with it",
-      "Day 55 — Build Something: a prompt to start a small creative or professional project using AI as a collaborator",
-      "Day 60 — Your Personal Advisory Board: identifying 3 people to build a deeper mentorship relationship with",
-      "Day 65 — The Portfolio Mindset: why a single job is the riskiest position — and how to think in terms of income streams",
-      "Day 70 — Communicating Your Value: how to talk about your evolution to employers or clients in concrete terms",
-      "Day 75 — Emotional Resilience Under Uncertainty: a practical toolkit for managing anxiety when the ground keeps shifting",
-      "Day 80 — The Crisis You Avoided: visualising the person you would have been if you had done nothing",
-    ],
-  },
-  {
-    id: "phase4",
-    label: "Phase 4 — Transcend",
-    subtitle: "Days 81–100 · Beyond the Job",
-    color: "#a076f9",
-    icon: "∞",
-    description: "The deeper question. Who you're becoming. Your next chapter.",
-    days: [81, 85, 88, 91, 95, 98, 100],
-    themes: [
-      "Day 81 — What Does Flourishing Look Like For You? A values excavation exercise",
-      "Day 85 — Legacy Without a Job Title: what mark you want to leave, independent of your career",
-      "Day 88 — The Community You Belong To: finding or building a tribe of people navigating the same transition",
-      "Day 91 — Money, Meaning, and the New Economy: rethinking financial security in an AGI world",
-      "Day 95 — Gratitude for the Disruption: finding genuine appreciation for being forced to evolve",
-      "Day 98 — Letter to Yourself in One Year: a written exercise projecting forward with intention",
-      "Day 100 — Who Are You Now? A final reflection — and your next 100-day challenge",
-    ],
-  },
-];
 
 const ASSESSMENT_PROMPT = `You are Jinshi — a world-renowned life coach, organisational psychologist, and futurist with 30 years of experience helping people navigate career identity crises and radical change. You specialise in the psychological and vocational impact of AGI on the human workforce.
 
@@ -103,36 +22,7 @@ One provocative, soul-level question that reframes their relationship to work en
 
 Under 600 words total. No corporate speak.`;
 
-function buildBatchPrompt(phase, jobDesc) {
-  return `You are Jinshi — AGI transitions coach with 30 years experience.
-
-A person has described their job as: "${jobDesc}"
-
-Draft ${phase.themes.length} coaching emails for ${phase.label} (${phase.subtitle}).
-
-Each email is a personal letter from a trusted mentor. Warm, direct, specific to THEIR role. Reference their actual job where relevant. Never generic.
-
-RESPOND ONLY WITH VALID JSON. No markdown. No backticks. No preamble. Start with [ end with ].
-
-[
-  {
-    "day": <number>,
-    "subject": "<personal subject line — NOT newsletter-style>",
-    "preview": "<1 sentence hook, 12 words max>",
-    "theme": "<short theme label, 4 words max>",
-    "body": "<email body, 220-260 words, second person, warm but direct, end with a single action or reflection prompt, sign off as Jinshi. Use \\n\\n for paragraph breaks.>"
-  }
-]
-
-The emails must cover these specific themes on these days:
-${phase.themes.map((t, i) => `Email ${i + 1}: ${t} (day: ${phase.days[i]})`).join("\n")}
-
-Write every email as if you know this specific person's job intimately. Make it feel hand-written for them.`;
-}
-
-// ─── API ─────────────────────────────────────────────────────────────────────
-
-async function callClaude(systemPrompt, userMessage, maxTokens = 1000) {
+async function callGroq(systemPrompt, userMessage, maxTokens = 1000) {
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -145,7 +35,7 @@ async function callClaude(systemPrompt, userMessage, maxTokens = 1000) {
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user",   content: userMessage },
+        { role: "user", content: userMessage },
       ],
     }),
   });
@@ -154,22 +44,12 @@ async function callClaude(systemPrompt, userMessage, maxTokens = 1000) {
   return data.choices?.[0]?.message?.content || "";
 }
 
-function safeParseJSON(raw) {
-  try {
-    const clean = raw.replace(/```json|```/g, "").trim();
-    const start = clean.indexOf("[");
-    const end = clean.lastIndexOf("]");
-    if (start === -1 || end === -1) return null;
-    return JSON.parse(clean.slice(start, end + 1));
-  } catch { return null; }
-}
-
 function parseAssessment(text) {
   const defs = [
-    { header: "THREAT ASSESSMENT", icon: "⚠", color: "#e05252" },
-    { header: "THE IDENTITY TRAP", icon: "◎", color: "#e0a852" },
-    { header: "YOUR SURVIVAL ARCHITECTURE", icon: "◈", color: "#52b4e0" },
-    { header: "THE DEEPER QUESTION", icon: "∞", color: "#a076f9" },
+    { header: "THREAT ASSESSMENT", icon: "⚠", accent: "var(--accent-red)" },
+    { header: "THE IDENTITY TRAP", icon: "◎", accent: "var(--accent-amber)" },
+    { header: "YOUR SURVIVAL ARCHITECTURE", icon: "◈", accent: "var(--accent-blue)" },
+    { header: "THE DEEPER QUESTION", icon: "∞", accent: "var(--accent-purple)" },
   ];
   return defs.map(d => {
     const rx = new RegExp(`## ${d.header}([\\s\\S]*?)(?=## |$)`, "i");
@@ -178,416 +58,424 @@ function parseAssessment(text) {
   }).filter(s => s.content);
 }
 
-// ─── SUB-COMPONENTS ──────────────────────────────────────────────────────────
-
-function PhaseHeader({ phase, emailCount, totalEmails, status }) {
-  const pct = totalEmails > 0 ? Math.round((emailCount / totalEmails) * 100) : 0;
-  return (
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 16, padding: "20px 24px", background: `${phase.color}08`, borderLeft: `3px solid ${phase.color}`, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-      <span style={{ fontSize: 22, color: phase.color, flexShrink: 0, marginTop: 2 }}>{phase.icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 11, letterSpacing: "0.28em", textTransform: "uppercase", color: phase.color, marginBottom: 4 }}>{phase.label}</div>
-        <div style={{ fontSize: 13, color: "#5a5850", marginBottom: status === "generating" ? 10 : 0 }}>{phase.subtitle}</div>
-        {status === "generating" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flex: 1, height: 2, background: "rgba(255,255,255,0.05)", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", inset: 0, background: `linear-gradient(90deg, transparent, ${phase.color}, transparent)`, animation: "sweep 1.6s ease infinite" }} />
-            </div>
-            <span style={{ fontSize: 10, letterSpacing: "0.2em", color: phase.color, textTransform: "uppercase", flexShrink: 0 }}>Writing...</span>
-          </div>
-        )}
-        {status === "done" && (
-          <div style={{ fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "#52e0a4", marginTop: 4 }}>✓ {emailCount} emails ready</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function EmailRow({ email, phase, isOpen, onToggle }) {
-  return (
-    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", animation: "slideIn 0.35s ease both" }}>
-      <button onClick={onToggle} style={{ width: "100%", background: "transparent", border: "none", padding: "18px 24px", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ fontSize: 10, letterSpacing: "0.2em", border: `1px solid ${phase.color}55`, color: phase.color, padding: "3px 9px", flexShrink: 0, minWidth: 52, textAlign: "center" }}>
-          D{email.day}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "Playfair Display, serif", fontSize: 14, fontWeight: 700, color: "#d0cbc4", lineHeight: 1.3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{email.subject}</div>
-          <div style={{ fontSize: 11, color: "#3a3830", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{email.preview}</div>
-        </div>
-        <div style={{ fontSize: 10, letterSpacing: "0.12em", color: "#3a3830", flexShrink: 0, textTransform: "uppercase", paddingRight: 4 }}>{email.theme}</div>
-        <div style={{ color: "#2a2820", fontSize: 13, flexShrink: 0, transition: "transform 0.25s", transform: isOpen ? "rotate(180deg)" : "none" }}>∨</div>
-      </button>
-      {isOpen && (
-        <div style={{ padding: "4px 24px 28px 24px", animation: "slideIn 0.25s ease" }}>
-          <div style={{ display: "inline-block", fontSize: 9, letterSpacing: "0.25em", textTransform: "uppercase", border: `1px solid ${phase.color}33`, color: phase.color, padding: "3px 10px", marginBottom: 16 }}>◈ {email.theme}</div>
-          <div style={{ fontSize: 14, lineHeight: 1.95, color: "#9a9490" }}>
-            {(email.body || "").split("\\n\\n").map((para, i) => (
-              <p key={i} style={{ marginBottom: 14 }}>{para.replace(/\\n/g, " ")}</p>
-            ))}
-          </div>
-          <button onClick={() => navigator.clipboard.writeText(`Subject: ${email.subject}\n\n${(email.body || "").replace(/\\n\\n/g, "\n\n").replace(/\\n/g, "\n")}`)}
-            style={{ marginTop: 16, background: "transparent", border: "1px solid rgba(255,255,255,0.08)", color: "#4a4840", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", padding: "7px 14px", cursor: "pointer", transition: "all 0.2s" }}
-            onMouseEnter={e => { e.target.style.color = "#d4cfc8"; e.target.style.borderColor = "rgba(255,255,255,0.2)"; }}
-            onMouseLeave={e => { e.target.style.color = "#4a4840"; e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}>
-            ⊕ Copy email text
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SkeletonRows({ count, color }) {
-  return Array.from({ length: count }, (_, i) => (
-    <div key={i} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", padding: "18px 24px", display: "flex", alignItems: "center", gap: 14, opacity: 1 - i * 0.15 }}>
-      <div style={{ width: 52, height: 22, background: `${color}18`, flexShrink: 0 }} />
-      <div style={{ flex: 1 }}>
-        <div style={{ height: 13, background: "rgba(255,255,255,0.04)", width: `${55 + Math.random() * 30}%`, marginBottom: 6 }} />
-        <div style={{ height: 10, background: "rgba(255,255,255,0.025)", width: `${30 + Math.random() * 25}%` }} />
-      </div>
-    </div>
-  ));
-}
-
-function ProgressRing({ pct, color, size = 48 }) {
-  const r = (size - 6) / 2;
-  const circ = 2 * Math.PI * r;
-  return (
-    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={3} />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={3}
-        strokeDasharray={circ} strokeDashoffset={circ * (1 - pct / 100)}
-        style={{ transition: "stroke-dashoffset 0.5s ease" }} strokeLinecap="round" />
-    </svg>
-  );
-}
-
-// ─── MAIN ────────────────────────────────────────────────────────────────────
+const LOAD_MSGS = [
+  "Mapping your vocational DNA...",
+  "Cross-referencing AGI threat timelines...",
+  "Profiling your identity architecture...",
+  "Building your survival blueprint...",
+  "Almost there...",
+];
 
 export default function App() {
+  const [theme, setTheme] = useState("light");
+  const [stage, setStage] = useState("landing");
   const [userEmail, setUserEmail] = useState("");
   const [jobDesc, setJobDesc] = useState("");
-  const [stage, setStage] = useState("landing"); // landing | form | loading | result | confirm
   const [assessment, setAssessment] = useState("");
-  const [phaseEmails, setPhaseEmails] = useState({ phase1: [], phase2: [], phase3: [], phase4: [] });
-  const [phaseStatus, setPhaseStatus] = useState({ phase1: "idle", phase2: "idle", phase3: "idle", phase4: "idle" });
-  const [openEmail, setOpenEmail] = useState(null);
-  const [activeTab, setActiveTab] = useState("assessment");
+  const [encouragement, setEncouragement] = useState("");
+  const [emailsEnrolled, setEmailsEnrolled] = useState(false);
   const [error, setError] = useState("");
   const [loadTick, setLoadTick] = useState(0);
-  const [activePhaseFilter, setActivePhaseFilter] = useState("all");
-  const [emailsEnrolled, setEmailsEnrolled] = useState(false);
-  const [encouragement, setEncouragement] = useState("");
 
-  const loadMsgs = ["Mapping your vocational DNA...", "Cross-referencing AGI threat timelines...", "Profiling your identity architecture...", "Building your survival blueprint...", "Almost there..."];
+  const dk = theme === "dark";
+
   useEffect(() => {
     if (stage !== "loading") return;
-    const iv = setInterval(() => setLoadTick(t => t + 1), 2100);
+    const iv = setInterval(() => setLoadTick(t => t + 1), 2200);
     return () => clearInterval(iv);
   }, [stage]);
 
   const sections = assessment ? parseAssessment(assessment) : [];
-  const allEmails = [...(phaseEmails.phase1 || []), ...(phaseEmails.phase2 || []), ...(phaseEmails.phase3 || []), ...(phaseEmails.phase4 || [])];
-  const totalEmailsExpected = PHASES.reduce((s, p) => s + p.themes.length, 0);
-  const totalGenerated = allEmails.length;
-  const agentDone = Object.values(phaseStatus).every(s => s === "done" || s === "error");
-  const agentRunning = Object.values(phaseStatus).some(s => s === "generating");
-
-  // Email generation happens on the backend (Cloudflare Worker)
-  // No frontend generation needed
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setStage("loading");
+    if (!userEmail || !jobDesc || jobDesc.length < 30) {
+      setError("Please fill in both fields with enough detail.");
+      return;
+    }
     setError("");
-    setPhaseEmails({ phase1: [], phase2: [], phase3: [], phase4: [] });
-    setPhaseStatus({ phase1: "idle", phase2: "idle", phase3: "idle", phase4: "idle" });
+    setStage("loading");
 
     try {
-      // Step 1: Get instant assessment (shown on screen)
-      const text = await callClaude(ASSESSMENT_PROMPT, `My job: ${jobDesc}`);
+      const text = await callGroq(ASSESSMENT_PROMPT, `My job: ${jobDesc}`);
       setAssessment(text);
-      setStage("result");
-      setActiveTab("assessment");
 
-      // Step 2: Register with backend + schedule 28 emails via Resend (fire & forget)
       fetch(`${BACKEND_URL}/api/subscribe`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: userEmail, jobDesc }),
       })
         .then(r => r.json())
-        .then(d => {
-          if (d.success) setEmailsEnrolled(true);
-        })
-        .catch(() => {}); // Silent fail — preview still works
+        .then(d => { if (d.success) setEmailsEnrolled(true); })
+        .catch(() => {});
 
-      // Step 3: Generate personalised encouragement for confirmation page
-      const enc = await callClaude(
-        "You are Jinshi — AGI transitions coach. Write a single short paragraph (4-5 sentences) of warm, specific, personal encouragement for this person based on their job. Acknowledge the courage it takes to face this uncertainty. Make it feel like it was written just for them. No generic phrases. Sign off with: — Jinshi",
-        `The person's job: ${jobDesc}`
+      const enc = await callGroq(
+        "You are Jinshi — AGI transitions coach. Write one warm, specific paragraph (4-5 sentences) of personal encouragement based on this person's job. Acknowledge the courage it takes to face this uncertainty. Make it feel written just for them. No generic phrases. Sign off: — Jinshi",
+        `Their job: ${jobDesc}`,
+        400
       );
       setEncouragement(enc);
-
-      // Emails are generated and sent by the Cloudflare Worker backend
+      setStage("result");
     } catch {
       setError("Something went wrong. Please try again.");
       setStage("form");
     }
   }
 
-  const reset = () => {
-    setStage("form"); setAssessment(""); setActiveTab("assessment"); setError("");
-    setEmailsEnrolled(false); setEncouragement("");
-    setPhaseEmails({ phase1: [], phase2: [], phase3: [], phase4: [] });
-    setPhaseStatus({ phase1: "idle", phase2: "idle", phase3: "idle", phase4: "idle" });
-    setOpenEmail(null);
-  };
+  function reset() {
+    setStage("landing");
+    setAssessment(""); setEncouragement("");
+    setEmailsEnrolled(false); setError("");
+    setJobDesc(""); setUserEmail("");
+  }
 
-  const filteredEmails = activePhaseFilter === "all" ? allEmails : (phaseEmails[activePhaseFilter] || []);
-  const filteredPhase = PHASES.find(p => p.id === activePhaseFilter);
+  const vars = dk ? {
+    "--bg": "#0f1117", "--bg2": "#161a24", "--bg3": "#1e2330",
+    "--border": "rgba(255,255,255,0.08)",
+    "--text": "#e8e3dc", "--text2": "#8a8580", "--text3": "#3a3830",
+    "--accent": "#5b7ff0", "--accent-red": "#e05252",
+    "--accent-amber": "#e0a852", "--accent-blue": "#52b4e0", "--accent-purple": "#a076f9",
+    "--card": "#161a24", "--card2": "#1e2330", "--shadow": "0 4px 32px rgba(0,0,0,0.4)",
+  } : {
+    "--bg": "#f7f5f0", "--bg2": "#ffffff", "--bg3": "#efecea",
+    "--border": "rgba(0,0,0,0.09)",
+    "--text": "#1a1814", "--text2": "#6b6560", "--text3": "#b0aba5",
+    "--accent": "#2c4fe8", "--accent-red": "#c93636",
+    "--accent-amber": "#c47f1a", "--accent-blue": "#1e8fb0", "--accent-purple": "#7c4fd4",
+    "--card": "#ffffff", "--card2": "#f0ede8", "--shadow": "0 4px 32px rgba(0,0,0,0.08)",
+  };
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inconsolata:wght@300;400;500;600&display=swap');
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{background:#080b12;color:#d4cfc8;font-family:'Inconsolata',monospace;min-height:100vh;overflow-x:hidden}
-        button{cursor:pointer;font-family:'Inconsolata',monospace}
-        input,textarea{font-family:'Inconsolata',monospace}
-        input::placeholder,textarea::placeholder{color:#252318}
-        textarea{resize:vertical}
-        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#1e1c14}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{opacity:.35;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
-        @keyframes sweep{0%{left:-100%}100%{left:100%}}
-        @keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes agentBlink{0%,100%{opacity:1}50%{opacity:.3}}
-        .fade-in{animation:fadeUp .65s ease both}
-        .noise{position:fixed;inset:0;opacity:.45;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E")}
-        .grid{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(255,255,255,.016) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.016) 1px,transparent 1px);background-size:60px 60px}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { overflow-x: hidden; }
+        button { cursor: pointer; font-family: 'DM Sans', sans-serif; }
+        input, textarea { font-family: 'DM Sans', sans-serif; }
+        textarea { resize: vertical; }
+
+        @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes sweep { 0% { transform:translateX(-100%); } 100% { transform:translateX(300%); } }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
+        @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+
+        .fade-up { animation: fadeUp 0.55s ease both; }
+        .fade-in { animation: fadeIn 0.4s ease both; }
+
+        .btn-primary {
+          display:inline-flex; align-items:center; gap:10px;
+          background:var(--accent); color:#fff; border:none; border-radius:8px;
+          padding:14px 28px; font-size:15px; font-weight:600; letter-spacing:0.01em;
+          transition:opacity 0.2s, transform 0.15s;
+        }
+        .btn-primary:hover { opacity:0.88; transform:translateY(-1px); }
+
+        .btn-ghost {
+          display:inline-flex; align-items:center; gap:8px;
+          background:transparent; color:var(--text2);
+          border:1.5px solid var(--border); border-radius:8px;
+          padding:12px 22px; font-size:14px; font-weight:500;
+          transition:border-color 0.2s, color 0.2s, background 0.2s;
+        }
+        .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+
+        .card { background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); }
+
+        .input-field {
+          width:100%; background:var(--bg3); border:1.5px solid var(--border);
+          border-radius:10px; color:var(--text); font-size:15px; padding:14px 16px;
+          transition:border-color 0.2s, box-shadow 0.2s; outline:none;
+        }
+        .input-field:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(44,79,232,0.12); }
+        .input-field::placeholder { color:var(--text3); }
+
+        .section-card {
+          background:var(--card); border:1px solid var(--border); border-radius:14px;
+          padding:28px 32px; margin-bottom:16px; box-shadow:var(--shadow);
+          animation:fadeUp 0.5s ease both;
+        }
+
+        .navbar {
+          position:fixed; top:0; left:0; right:0; z-index:100;
+          display:flex; align-items:center; justify-content:space-between;
+          padding:0 32px; height:64px;
+          border-bottom:1px solid var(--border);
+          backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+        }
+
+        .theme-toggle {
+          width:48px; height:26px; border-radius:13px; border:none; cursor:pointer;
+          position:relative; transition:background 0.3s;
+        }
+        .theme-toggle::after {
+          content:''; position:absolute; width:20px; height:20px; border-radius:50%;
+          background:#fff; top:3px; left:3px; transition:transform 0.3s;
+          box-shadow:0 1px 4px rgba(0,0,0,0.2);
+        }
+        .theme-toggle.dark::after { transform:translateX(22px); }
+
+        @media (max-width: 640px) {
+          .section-card { padding:20px 18px; }
+          .hero-grid { grid-template-columns:1fr !important; }
+          .steps-grid { grid-template-columns:1fr !important; }
+          .confirm-grid { grid-template-columns:1fr !important; }
+          .navbar { padding:0 16px; }
+          .form-card { padding:28px 20px !important; }
+          .hero-actions { flex-direction:column; align-items:flex-start; }
+          .hero-stats { gap:16px !important; }
+        }
       `}</style>
 
-      <div className="noise" /><div className="grid" />
-      <div style={{ position:"fixed",width:700,height:700,top:-280,left:-220,borderRadius:"50%",background:"rgba(224,82,82,.05)",filter:"blur(130px)",pointerEvents:"none",zIndex:0 }} />
-      <div style={{ position:"fixed",width:600,height:600,bottom:-200,right:-180,borderRadius:"50%",background:"rgba(160,118,249,.045)",filter:"blur(130px)",pointerEvents:"none",zIndex:0 }} />
+      <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text)", fontFamily:"'DM Sans', sans-serif", transition:"background 0.3s, color 0.3s", ...vars }}>
 
-      <div style={{ position:"relative",zIndex:1,minHeight:"100vh" }}>
+        {/* ── NAVBAR ── */}
+        <nav className="navbar" style={{ background: dk ? "rgba(15,17,23,0.88)" : "rgba(247,245,240,0.88)" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <span style={{ fontSize:18, color:"var(--accent)" }}>◈</span>
+            <span style={{ fontFamily:"'DM Serif Display', serif", fontSize:18, color:"var(--text)" }}>Jinshi</span>
+          </div>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <span style={{ fontSize:12, color:"var(--text3)" }}>{dk ? "☾" : "☀"}</span>
+            <button className={`theme-toggle ${dk?"dark":""}`} style={{ background: dk ? "var(--accent)" : "#c5c0ba" }} onClick={() => setTheme(dk?"light":"dark")} aria-label="Toggle theme" />
+          </div>
+        </nav>
 
-        {/* ══ LANDING ══ */}
+        {/* ══════════════════════════════════════════════════════ LANDING */}
         {stage === "landing" && (
-          <div className="fade-in" style={{ display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"60px 24px",textAlign:"center" }}>
-            <div style={{ maxWidth:820 }}>
-              <p style={{ fontSize:10,letterSpacing:".32em",textTransform:"uppercase",color:"#e05252",marginBottom:28 }}>⬤ AGI is not coming — it is arriving</p>
-              <h1 style={{ fontFamily:"Playfair Display,serif",fontSize:"clamp(46px,8vw,90px)",lineHeight:1,fontWeight:900,color:"#f0ebe3",marginBottom:14,letterSpacing:"-.02em" }}>
-                Are you<br /><em style={{ color:"#e0a852" }}>ready</em><br />to still<br />matter?
-              </h1>
-              <div style={{ width:56,height:1,background:"#e05252",margin:"32px auto" }} />
-              <p style={{ fontFamily:"Playfair Display,serif",fontSize:"clamp(16px,2.2vw,21px)",fontStyle:"italic",color:"#9e9890",marginBottom:36,lineHeight:1.65 }}>
-                Most people won't see it until it's too late.<br />The question isn't whether your job is safe —<br />it's whether your <em>identity</em> is.
-              </p>
-              <p style={{ fontSize:15,lineHeight:1.9,color:"#a8a298",maxWidth:620,margin:"0 auto 52px" }}>
-                AGI will not just eliminate jobs. It will dissolve the stories we tell ourselves about who we are. Your title. Your expertise. Your sense of contribution. <strong style={{ color:"#d4cfc8" }}>All of it is at risk.</strong><br /><br />
-                Tell me what you do. I'll give you an honest assessment — then my AI agent will build you a personalised <strong style={{ color:"#d4cfc8" }}>100-day coaching programme</strong>, delivered to your inbox in 28 strategic emails across 4 phases of transformation.
-              </p>
+          <div style={{ paddingTop:64 }}>
 
-              {/* Phase preview */}
-              <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12,maxWidth:720,margin:"0 auto 52px",textAlign:"left" }}>
-                {PHASES.map(p => (
-                  <div key={p.id} style={{ background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.06)",borderLeft:`3px solid ${p.color}`,padding:"16px 18px" }}>
-                    <div style={{ fontSize:10,letterSpacing:".25em",textTransform:"uppercase",color:p.color,marginBottom:6 }}>{p.icon} {p.label.split("—")[1]?.trim()}</div>
-                    <div style={{ fontSize:11,color:"#5a5850",lineHeight:1.6 }}>{p.subtitle}</div>
-                  </div>
-                ))}
+            {/* Hero */}
+            <div className="hero-grid" style={{ maxWidth:1100, margin:"0 auto", padding:"80px 32px 60px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:64, alignItems:"center" }}>
+
+              <div className="fade-up">
+                <div style={{ display:"inline-flex", alignItems:"center", gap:8, background: dk?"rgba(91,127,240,0.15)":"rgba(44,79,232,0.08)", border:"1px solid rgba(44,79,232,0.2)", borderRadius:100, padding:"6px 16px", marginBottom:28 }}>
+                  <span style={{ width:7, height:7, borderRadius:"50%", background:"var(--accent)", display:"block", animation:"pulse 2s ease infinite" }} />
+                  <span style={{ fontSize:11, fontWeight:700, color:"var(--accent)", letterSpacing:"0.06em", textTransform:"uppercase" }}>AGI Career Intelligence</span>
+                </div>
+
+                <h1 style={{ fontFamily:"'DM Serif Display', serif", fontSize:"clamp(40px, 5.5vw, 80px)", lineHeight:1.05, letterSpacing:"-0.025em", color:"var(--text)", marginBottom:24 }}>
+                  Are you ready<br />
+                  <em style={{ color:"var(--accent)", fontStyle:"italic" }}>to still matter?</em>
+                </h1>
+
+                <p style={{ fontSize:17, color:"var(--text2)", lineHeight:1.8, marginBottom:36, maxWidth:440 }}>
+                  Get a frank, personalised assessment of how AGI will disrupt your career — then receive 28 coaching emails over 100 days to help you adapt before it's too late.
+                </p>
+
+                <div className="hero-actions" style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
+                  <button className="btn-primary" onClick={() => setStage("form")}>Begin your assessment →</button>
+                  <span style={{ fontSize:13, color:"var(--text3)" }}>Free · Takes 60 seconds</span>
+                </div>
+
+                <div className="hero-stats" style={{ display:"flex", gap:32, marginTop:48 }}>
+                  {[["28","Coaching emails"],["100","Days of guidance"],["4","Phases of growth"]].map(([n, l]) => (
+                    <div key={l}>
+                      <div style={{ fontFamily:"'DM Serif Display', serif", fontSize:30, color:"var(--text)", letterSpacing:"-0.02em" }}>{n}</div>
+                      <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <button onClick={() => setStage("form")}
-                style={{ background:"#e05252",color:"#fff",border:"none",padding:"18px 56px",fontSize:13,letterSpacing:".22em",textTransform:"uppercase",transition:"all .2s",clipPath:"polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))" }}
-                onMouseEnter={e=>{e.target.style.background="#c83c3c";e.target.style.transform="translateY(-2px)";e.target.style.boxShadow="0 12px 40px rgba(224,82,82,.3)"}}
-                onMouseLeave={e=>{e.target.style.background="#e05252";e.target.style.transform="";e.target.style.boxShadow=""}}>
-                Start my 100-day programme
-              </button>
-
-              <div style={{ display:"flex",gap:52,marginTop:72,justifyContent:"center",flexWrap:"wrap" }}>
-                {[["28","personalised emails"],["100","days of coaching"],["4","transformation phases"]].map(([n,l]) => (
-                  <div key={n} style={{ textAlign:"center" }}>
-                    <div style={{ fontFamily:"Playfair Display,serif",fontSize:42,fontWeight:900,color:"#e0a852" }}>{n}</div>
-                    <div style={{ fontSize:10,letterSpacing:".2em",textTransform:"uppercase",color:"#3a3830",marginTop:8 }}>{l}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ══ FORM ══ */}
-        {stage === "form" && (
-          <div className="fade-in" style={{ display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",padding:"72px 24px" }}>
-            <div style={{ maxWidth:660,width:"100%" }}>
-              <h2 style={{ fontFamily:"Playfair Display,serif",fontSize:"clamp(28px,5vw,46px)",fontWeight:700,color:"#f0ebe3",textAlign:"center",marginBottom:8 }}>Your Assessment</h2>
-              <p style={{ fontSize:12,letterSpacing:".18em",textTransform:"uppercase",color:"#3a3830",textAlign:"center",marginBottom:40 }}>60 seconds of honesty. 100 days of guidance.</p>
-
-              <div style={{ background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",padding:"22px 26px",marginBottom:36 }}>
-                <div style={{ fontSize:11,letterSpacing:".2em",textTransform:"uppercase",color:"#5a5850",marginBottom:14 }}>What you'll receive</div>
+              <div className="fade-up" style={{ animationDelay:"0.15s", display:"flex", flexDirection:"column", gap:12 }}>
                 {[
-                  { icon:"◈", color:"#e0a852", label:"Instant personalised assessment", sub:"Threat level + survival architecture for your role" },
-                  { icon:"⟳", color:"#52e0a4", label:"AI-generated 100-day programme", sub:"28 emails across 4 phases — written for you, sent on a schedule" },
-                ].map(f => (
-                  <div key={f.label} style={{ display:"flex",gap:14,marginBottom:14,alignItems:"flex-start" }}>
-                    <span style={{ color:f.color,fontSize:18,flexShrink:0,marginTop:1 }}>{f.icon}</span>
+                  { label:"Phase 1", title:"Wake Up", sub:"Days 1–20 · Threat clarity & first moves", color:"#c93636", icon:"⚠" },
+                  { label:"Phase 2", title:"Rebuild", sub:"Days 21–50 · Identity & new skills", color:"#c47f1a", icon:"◈" },
+                  { label:"Phase 3", title:"Reposition", sub:"Days 51–80 · Your new value proposition", color:"#1e8fb0", icon:"◎" },
+                  { label:"Phase 4", title:"Transcend", sub:"Days 81–100 · Beyond the job", color:"#7c4fd4", icon:"∞" },
+                ].map((p, i) => (
+                  <div key={p.label} className="card" style={{ padding:"16px 20px", display:"flex", alignItems:"center", gap:16, animation:`fadeUp 0.5s ease ${0.1+i*0.08}s both` }}>
+                    <div style={{ width:40, height:40, borderRadius:10, background:`${p.color}15`, border:`1px solid ${p.color}30`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, fontSize:18, color:p.color }}>{p.icon}</div>
                     <div>
-                      <div style={{ fontSize:12,letterSpacing:".1em",textTransform:"uppercase",color:f.color,marginBottom:3 }}>{f.label}</div>
-                      <div style={{ fontSize:12,color:"#4a4840",lineHeight:1.6 }}>{f.sub}</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:p.color, textTransform:"uppercase", letterSpacing:"0.06em" }}>{p.label}</span>
+                        <span style={{ fontSize:14, fontWeight:600, color:"var(--text)" }}>{p.title}</span>
+                      </div>
+                      <div style={{ fontSize:12, color:"var(--text3)" }}>{p.sub}</div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              <form onSubmit={handleSubmit}>
-                {error && <div style={{ background:"rgba(224,82,82,.1)",border:"1px solid rgba(224,82,82,.25)",color:"#e05252",padding:"13px 17px",fontSize:13,marginBottom:20 }}>{error}</div>}
-                <div style={{ marginBottom:22 }}>
-                  <label style={{ display:"block",fontSize:10,letterSpacing:".25em",textTransform:"uppercase",color:"#4a4840",marginBottom:10 }}>Your email address</label>
-                  <input style={{ width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",color:"#d4cfc8",fontSize:15,padding:"15px 18px",outline:"none" }} type="email" placeholder="you@yourworld.com" value={userEmail} onChange={e=>setUserEmail(e.target.value)} required />
-                </div>
-                <div style={{ marginBottom:28 }}>
-                  <label style={{ display:"block",fontSize:10,letterSpacing:".25em",textTransform:"uppercase",color:"#4a4840",marginBottom:10 }}>Your role & what you actually do</label>
-                  <textarea style={{ width:"100%",background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,255,255,.08)",color:"#d4cfc8",fontSize:15,padding:"15px 18px",outline:"none",minHeight:155 }}
-                    placeholder={`e.g. "I'm a senior UX designer at a fintech startup. I lead product design, run user research, manage a team of 3, and present to stakeholders. 8 years in design."`}
-                    value={jobDesc} onChange={e=>setJobDesc(e.target.value)} required />
-                </div>
-                <button type="submit" style={{ width:"100%",background:"transparent",border:"1px solid #e05252",color:"#e05252",padding:19,fontSize:13,letterSpacing:".2em",textTransform:"uppercase",transition:"background .2s" }}
-                  onMouseEnter={e=>e.target.style.background="rgba(224,82,82,.1)"}
-                  onMouseLeave={e=>e.target.style.background="transparent"}>
-                  → Begin my 100-day programme
-                </button>
-              </form>
-              <p style={{ fontSize:10,color:"#252318",textAlign:"center",marginTop:16,lineHeight:1.7 }}>No spam. No data selling. Your email is used only to deliver your programme.</p>
-              <button onClick={()=>setStage("landing")} style={{ background:"transparent",border:"none",color:"#252318",fontSize:11,letterSpacing:".2em",textTransform:"uppercase",display:"block",margin:"28px auto 0",transition:"color .2s" }}
-                onMouseEnter={e=>e.target.style.color="#d4cfc8"} onMouseLeave={e=>e.target.style.color="#252318"}>← back</button>
             </div>
-          </div>
-        )}
 
-        {/* ══ LOADING ══ */}
-        {stage === "loading" && (
-          <div style={{ display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",flexDirection:"column" }}>
-            <div style={{ textAlign:"center",animation:"fadeUp .5s ease" }}>
-              <div style={{ fontSize:52,marginBottom:32,animation:"pulse 2s ease infinite" }}>◈</div>
-              <p style={{ fontSize:13,letterSpacing:".22em",textTransform:"uppercase",color:"#5a5850",marginBottom:28 }}>{loadMsgs[loadTick % loadMsgs.length]}</p>
-              <div style={{ width:200,height:1,background:"rgba(255,255,255,.05)",margin:"0 auto",position:"relative",overflow:"hidden" }}>
-                <div style={{ position:"absolute",top:0,left:"-100%",width:"100%",height:"100%",background:"linear-gradient(90deg,transparent,#e0a852,transparent)",animation:"sweep 1.8s ease infinite" }} />
+            {/* How it works */}
+            <div style={{ background:"var(--card2)", borderTop:"1px solid var(--border)", borderBottom:"1px solid var(--border)", padding:"60px 32px" }}>
+              <div style={{ maxWidth:1100, margin:"0 auto" }}>
+                <div style={{ textAlign:"center", marginBottom:44 }}>
+                  <p style={{ fontSize:12, fontWeight:700, color:"var(--accent)", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>How it works</p>
+                  <h2 style={{ fontFamily:"'DM Serif Display', serif", fontSize:"clamp(26px, 4vw, 40px)", color:"var(--text)", letterSpacing:"-0.02em" }}>Three steps. 100 days. One transformation.</h2>
+                </div>
+                <div className="steps-grid" style={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:20 }}>
+                  {[
+                    { n:"01", title:"Describe your role", body:"Tell us what you actually do. The more specific, the more useful your assessment." },
+                    { n:"02", title:"Get your assessment", body:"Receive a frank analysis of your AGI threat level and a personalised survival plan — instantly." },
+                    { n:"03", title:"100 days of coaching", body:"28 personalised emails land in your inbox over 100 days, guiding you through the transition." },
+                  ].map(s => (
+                    <div key={s.n} className="card" style={{ padding:"28px 24px" }}>
+                      <div style={{ fontFamily:"'DM Serif Display', serif", fontSize:38, color:"var(--accent)", opacity:0.25, marginBottom:14, letterSpacing:"-0.02em" }}>{s.n}</div>
+                      <div style={{ fontSize:16, fontWeight:600, color:"var(--text)", marginBottom:8 }}>{s.title}</div>
+                      <div style={{ fontSize:14, color:"var(--text2)", lineHeight:1.75 }}>{s.body}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* ══ RESULT ══ */}
-        {stage === "result" && (
-          <div className="fade-in" style={{ maxWidth:860,margin:"0 auto",padding:"72px 24px 100px",width:"100%" }}>
-
-            {/* Enrolled confirmation banner */}
-            {emailsEnrolled && (
-              <div style={{ background:"rgba(82,224,164,.06)",border:"1px solid rgba(82,224,164,.2)",padding:"14px 20px",marginBottom:32,display:"flex",alignItems:"center",gap:12,animation:"slideIn .4s ease" }}>
-                <span style={{ fontSize:18,color:"#52e0a4" }}>✓</span>
-                <div>
-                  <div style={{ fontSize:12,letterSpacing:".15em",textTransform:"uppercase",color:"#52e0a4",marginBottom:3 }}>You're enrolled</div>
-                  <div style={{ fontSize:13,color:"#5a5850" }}>Your 100-day programme is being generated and will arrive at <strong style={{ color:"#a8a298" }}>{userEmail}</strong> starting today.</div>
-                </div>
-              </div>
-            )}
-
-            {/* Header */}
-            <div style={{ textAlign:"center",marginBottom:52 }}>
-              <p style={{ fontSize:10,letterSpacing:".3em",textTransform:"uppercase",color:"#e05252",marginBottom:16 }}>◈ Jinshi — Personal Assessment</p>
-              <h2 style={{ fontFamily:"Playfair Display,serif",fontSize:"clamp(28px,5vw,52px)",fontWeight:900,color:"#f0ebe3",lineHeight:1.1 }}>
-                Here is the truth<br />about where you stand.
+            {/* Bottom CTA */}
+            <div style={{ maxWidth:1100, margin:"0 auto", padding:"80px 32px", textAlign:"center" }}>
+              <h2 style={{ fontFamily:"'DM Serif Display', serif", fontSize:"clamp(26px, 4vw, 44px)", color:"var(--text)", marginBottom:20, letterSpacing:"-0.02em" }}>
+                The disruption is already here.
               </h2>
+              <p style={{ fontSize:16, color:"var(--text2)", marginBottom:36, maxWidth:460, margin:"0 auto 36px" }}>
+                The only question is whether you're adapting intentionally or waiting until it's too late.
+              </p>
+              <button className="btn-primary" onClick={() => setStage("form")}>Start your assessment →</button>
             </div>
+          </div>
+        )}
 
+        {/* ══════════════════════════════════════════════════════ FORM */}
+        {stage === "form" && (
+          <div style={{ paddingTop:64, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:"100px 24px 60px" }}>
+            <div style={{ width:"100%", maxWidth:540 }} className="fade-up">
+              <button onClick={() => setStage("landing")} style={{ background:"none", border:"none", color:"var(--text2)", fontSize:14, marginBottom:24, display:"flex", alignItems:"center", gap:6 }}>← Back</button>
 
+              <div className="card form-card" style={{ padding:"40px 36px" }}>
+                <p style={{ fontSize:12, fontWeight:700, color:"var(--accent)", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>◈ Jinshi Assessment</p>
+                <h2 style={{ fontFamily:"'DM Serif Display', serif", fontSize:"clamp(24px, 4vw, 34px)", color:"var(--text)", letterSpacing:"-0.02em", lineHeight:1.15, marginBottom:12 }}>
+                  60 seconds of honesty.<br />100 days of guidance.
+                </h2>
+                <p style={{ fontSize:14, color:"var(--text2)", lineHeight:1.75, marginBottom:28 }}>
+                  Fill in your role and email. We'll analyse your exposure and begin your programme immediately.
+                </p>
 
-            {/* ── Assessment ── */}
-            {(
-              <div style={{ animation:"slideIn .35s ease" }}>
-                {sections.map((s, i) => (
-                  <div key={i} style={{ background:"rgba(255,255,255,.03)",border:"1px solid rgba(255,255,255,.07)",borderLeft:`3px solid ${s.color}`,padding:"34px 38px",marginBottom:18,animation:`slideIn .4s ease ${i*.08}s both` }}>
-                    <div style={{ display:"flex",alignItems:"center",gap:12,marginBottom:18 }}>
-                      <span style={{ fontSize:18,color:s.color }}>{s.icon}</span>
-                      <div style={{ fontSize:10,letterSpacing:".35em",textTransform:"uppercase",color:s.color }}>{s.title}</div>
-                    </div>
-                    <div style={{ fontSize:15,lineHeight:1.9,color:"#9a9490",whiteSpace:"pre-wrap" }}>{s.content}</div>
+                {error && (
+                  <div style={{ background:"rgba(201,54,54,0.08)", border:"1px solid rgba(201,54,54,0.2)", borderRadius:10, padding:"12px 16px", marginBottom:20, fontSize:14, color:"var(--accent-red)" }}>
+                    {error}
                   </div>
-                ))}
+                )}
 
-              </div>
-            )}
+                <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:18 }}>
+                  <div>
+                    <label style={{ display:"block", fontSize:13, fontWeight:500, color:"var(--text2)", marginBottom:8 }}>Your email address</label>
+                    <input className="input-field" type="email" placeholder="you@example.com" value={userEmail} onChange={e => setUserEmail(e.target.value)} required />
+                  </div>
+                  <div>
+                    <label style={{ display:"block", fontSize:13, fontWeight:500, color:"var(--text2)", marginBottom:8 }}>Your role — what you actually do</label>
+                    <textarea className="input-field" rows={4} placeholder="Be specific. E.g: I'm a mid-level financial analyst at an investment bank. I build models, write reports, and present to stakeholders. 6 years experience." value={jobDesc} onChange={e => setJobDesc(e.target.value)} required />
+                    <p style={{ fontSize:12, color:"var(--text3)", marginTop:6 }}>The more specific, the more useful your assessment.</p>
+                  </div>
+                  <button className="btn-primary" type="submit" style={{ width:"100%", justifyContent:"center", marginTop:4 }}>
+                    Generate my assessment →
+                  </button>
+                </form>
 
-
-
-            {/* Continue to confirmation */}
-            <div style={{ textAlign:"center",marginTop:48 }}>
-              <button onClick={() => setStage("confirm")}
-                style={{ background:"#e05252",border:"none",color:"#fff",fontSize:11,letterSpacing:".25em",textTransform:"uppercase",padding:"16px 40px",transition:"all .2s" }}
-                onMouseEnter={e=>e.target.style.background="#c43f3f"}
-                onMouseLeave={e=>e.target.style.background="#e05252"}>
-                What happens next →
-              </button>
-              <div style={{ marginTop:20 }}>
-                <button onClick={reset} style={{ background:"transparent",border:"none",color:"#3a3830",fontSize:10,letterSpacing:".2em",textTransform:"uppercase",transition:"color .2s" }}
-                  onMouseEnter={e=>e.target.style.color="#d4cfc8"} onMouseLeave={e=>e.target.style.color="#3a3830"}>← assess a different role</button>
+                <p style={{ fontSize:12, color:"var(--text3)", marginTop:18, textAlign:"center", lineHeight:1.7 }}>
+                  No spam. Your email is used only to deliver your 100-day programme.
+                </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* ══ CONFIRM ══ */}
-        {stage === "confirm" && (
-          <div className="fade-in" style={{ maxWidth:720,margin:"0 auto",padding:"72px 24px 100px",width:"100%",textAlign:"center" }}>
-
-            {/* Icon */}
-            <div style={{ fontSize:56,marginBottom:32,animation:"pulse 3s ease infinite" }}>◈</div>
-
-            {/* Enrolled status */}
-            <p style={{ fontSize:10,letterSpacing:".3em",textTransform:"uppercase",color:"#52e0a4",marginBottom:20 }}>
-              {emailsEnrolled ? "✓ You're enrolled" : "◈ Programme generating"}
+        {/* ══════════════════════════════════════════════════════ LOADING */}
+        {stage === "loading" && (
+          <div style={{ paddingTop:64, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:28 }}>
+            <div style={{ width:52, height:52, border:"3px solid var(--border)", borderTop:"3px solid var(--accent)", borderRadius:"50%", animation:"spin 0.9s linear infinite" }} />
+            <p key={loadTick} style={{ fontSize:15, color:"var(--text2)", fontWeight:500, animation:"fadeIn 0.4s ease" }}>
+              {LOAD_MSGS[loadTick % LOAD_MSGS.length]}
             </p>
+            <div style={{ width:220, height:3, background:"var(--bg3)", borderRadius:2, overflow:"hidden" }}>
+              <div style={{ height:"100%", background:"var(--accent)", borderRadius:2, animation:"sweep 1.8s ease infinite", width:"40%" }} />
+            </div>
+          </div>
+        )}
 
-            <h2 style={{ fontFamily:"Playfair Display,serif",fontSize:"clamp(26px,5vw,48px)",fontWeight:900,color:"#f0ebe3",lineHeight:1.15,marginBottom:32 }}>
-              Your first email<br />is on its way.
-            </h2>
+        {/* ══════════════════════════════════════════════════════ RESULT */}
+        {stage === "result" && (
+          <div style={{ paddingTop:64 }} className="fade-in">
+            <div style={{ maxWidth:780, margin:"0 auto", padding:"60px 24px 80px" }}>
 
-            {/* Email confirmation */}
-            <div style={{ background:"rgba(82,224,164,.05)",border:"1px solid rgba(82,224,164,.15)",padding:"20px 28px",marginBottom:40,display:"inline-block",textAlign:"left",width:"100%" }}>
-              <div style={{ fontSize:10,letterSpacing:".25em",textTransform:"uppercase",color:"#52e0a4",marginBottom:10 }}>Your 100-day programme</div>
-              <div style={{ fontSize:14,color:"#a8a298",lineHeight:1.8 }}>
-                <div>✓ &nbsp;Day 1 email sent to <strong style={{ color:"#d4cfc8" }}>{userEmail}</strong></div>
-                <div style={{ marginTop:6 }}>✓ &nbsp;28 coaching emails across 4 phases</div>
-                <div style={{ marginTop:6 }}>✓ &nbsp;Each email personalised to your exact role</div>
-                <div style={{ marginTop:6 }}>✓ &nbsp;Delivered automatically — nothing to set up</div>
+              {emailsEnrolled && (
+                <div style={{ background: dk?"rgba(32,199,122,0.08)":"rgba(20,160,100,0.07)", border:"1px solid rgba(32,199,122,0.25)", borderRadius:12, padding:"14px 20px", marginBottom:32, display:"flex", alignItems:"center", gap:12 }}>
+                  <span style={{ fontSize:18, color:"#20c77a" }}>✓</span>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:600, color:"#20c77a", marginBottom:2 }}>You're enrolled</div>
+                    <div style={{ fontSize:13, color:"var(--text2)" }}>Your Day 1 email is on its way to <strong style={{ color:"var(--text)" }}>{userEmail}</strong></div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginBottom:40 }}>
+                <p style={{ fontSize:12, fontWeight:700, color:"var(--accent)", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>◈ Jinshi — Personal Assessment</p>
+                <h2 style={{ fontFamily:"'DM Serif Display', serif", fontSize:"clamp(28px, 5vw, 46px)", color:"var(--text)", letterSpacing:"-0.025em", lineHeight:1.1 }}>
+                  Here is the truth<br />about where you stand.
+                </h2>
+              </div>
+
+              {sections.map((s, i) => (
+                <div key={i} className="section-card" style={{ animationDelay:`${i*0.1}s`, borderLeft:`4px solid ${s.accent}` }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+                    <span style={{ fontSize:20, color:s.accent }}>{s.icon}</span>
+                    <span style={{ fontSize:11, fontWeight:700, color:s.accent, textTransform:"uppercase", letterSpacing:"0.1em" }}>{s.title}</span>
+                  </div>
+                  <div style={{ fontSize:15, lineHeight:1.9, color:"var(--text2)", whiteSpace:"pre-wrap" }}>{s.content}</div>
+                </div>
+              ))}
+
+              <div style={{ display:"flex", gap:12, marginTop:36, flexWrap:"wrap" }}>
+                <button className="btn-primary" onClick={() => setStage("confirm")}>What happens next →</button>
+                <button className="btn-ghost" onClick={reset}>← Assess a different role</button>
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Personalised encouragement */}
-            {encouragement && (
-              <div style={{ background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.06)",borderLeft:"3px solid #e0a852",padding:"28px 32px",marginBottom:40,textAlign:"left",animation:"slideIn .5s ease" }}>
-                <div style={{ fontSize:10,letterSpacing:".25em",textTransform:"uppercase",color:"#e0a852",marginBottom:16 }}>A word from Jinshi</div>
-                <div style={{ fontSize:15,lineHeight:1.9,color:"#9a9490",whiteSpace:"pre-wrap" }}>{encouragement}</div>
+        {/* ══════════════════════════════════════════════════════ CONFIRM */}
+        {stage === "confirm" && (
+          <div style={{ paddingTop:64 }} className="fade-in">
+            <div style={{ maxWidth:640, margin:"0 auto", padding:"60px 24px 80px" }}>
+
+              <div style={{ textAlign:"center", marginBottom:44 }}>
+                <div style={{ width:60, height:60, borderRadius:"50%", background: dk?"rgba(91,127,240,0.15)":"rgba(44,79,232,0.08)", border:"1px solid rgba(44,79,232,0.2)", display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 24px", fontSize:24, color:"var(--accent)" }}>◈</div>
+                <p style={{ fontSize:12, fontWeight:700, color:"#20c77a", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>
+                  {emailsEnrolled ? "✓ You're enrolled" : "Programme generating"}
+                </p>
+                <h2 style={{ fontFamily:"'DM Serif Display', serif", fontSize:"clamp(28px, 5vw, 42px)", color:"var(--text)", letterSpacing:"-0.025em", lineHeight:1.15, marginBottom:16 }}>
+                  Your first email<br />is on its way.
+                </h2>
+                <p style={{ fontSize:15, color:"var(--text2)", lineHeight:1.75 }}>
+                  Check your inbox at <strong style={{ color:"var(--text)" }}>{userEmail}</strong>
+                </p>
               </div>
-            )}
 
-            {/* Check spam note */}
-            <p style={{ fontSize:12,color:"#3a3830",letterSpacing:".08em",lineHeight:1.8,marginBottom:40 }}>
-              Check your spam folder if you don't see it within 5 minutes.<br />
-              Add <strong style={{ color:"#5a5850" }}>jinshi@contact.zoomfrez.xyz</strong> to your contacts to ensure delivery.
-            </p>
+              <div className="card" style={{ padding:"28px", marginBottom:20 }}>
+                <p style={{ fontSize:12, fontWeight:700, color:"var(--accent)", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:18 }}>Your 100-day programme</p>
+                <div className="confirm-grid" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+                  {[["✓","Day 1 email sent now"],["✓","28 coaching emails total"],["✓","4 phases of transformation"],["✓","Personalised to your exact role"]].map(([icon, text]) => (
+                    <div key={text} style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <span style={{ color:"#20c77a", fontWeight:700, flexShrink:0 }}>{icon}</span>
+                      <span style={{ fontSize:14, color:"var(--text2)" }}>{text}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <button onClick={reset}
-              style={{ background:"transparent",border:"1px solid rgba(255,255,255,.08)",color:"#3a3830",fontSize:10,letterSpacing:".2em",textTransform:"uppercase",padding:"12px 28px",transition:"all .2s" }}
-              onMouseEnter={e=>{e.target.style.color="#d4cfc8";e.target.style.borderColor="rgba(255,255,255,.2)"}}
-              onMouseLeave={e=>{e.target.style.color="#3a3830";e.target.style.borderColor="rgba(255,255,255,.08)"}}>
-              ← assess a different role
-            </button>
+              {encouragement && (
+                <div className="card" style={{ padding:"28px", marginBottom:20, borderLeft:"4px solid var(--accent-amber)" }}>
+                  <p style={{ fontSize:12, fontWeight:700, color:"var(--accent-amber)", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:14 }}>A word from Jinshi</p>
+                  <p style={{ fontSize:15, lineHeight:1.9, color:"var(--text2)", whiteSpace:"pre-wrap" }}>{encouragement}</p>
+                </div>
+              )}
+
+              <div style={{ background:"var(--bg3)", border:"1px solid var(--border)", borderRadius:10, padding:"14px 18px", marginBottom:32, fontSize:13, color:"var(--text3)", lineHeight:1.75 }}>
+                💡 Don't see it? Check your spam folder. Add <strong style={{ color:"var(--text2)" }}>jinshi@contact.zoomfrez.xyz</strong> to your contacts to keep your programme in your inbox.
+              </div>
+
+              <button className="btn-ghost" onClick={reset}>← Assess a different role</button>
+            </div>
           </div>
         )}
 
