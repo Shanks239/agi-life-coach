@@ -268,7 +268,7 @@ function ProgressRing({ pct, color, size = 48 }) {
 export default function App() {
   const [userEmail, setUserEmail] = useState("");
   const [jobDesc, setJobDesc] = useState("");
-  const [stage, setStage] = useState("landing"); // landing | form | loading | result
+  const [stage, setStage] = useState("landing"); // landing | form | loading | result | confirm
   const [assessment, setAssessment] = useState("");
   const [phaseEmails, setPhaseEmails] = useState({ phase1: [], phase2: [], phase3: [], phase4: [] });
   const [phaseStatus, setPhaseStatus] = useState({ phase1: "idle", phase2: "idle", phase3: "idle", phase4: "idle" });
@@ -278,6 +278,7 @@ export default function App() {
   const [loadTick, setLoadTick] = useState(0);
   const [activePhaseFilter, setActivePhaseFilter] = useState("all");
   const [emailsEnrolled, setEmailsEnrolled] = useState(false);
+  const [encouragement, setEncouragement] = useState("");
 
   const loadMsgs = ["Mapping your vocational DNA...", "Cross-referencing AGI threat timelines...", "Profiling your identity architecture...", "Building your survival blueprint...", "Almost there..."];
   useEffect(() => {
@@ -322,6 +323,13 @@ export default function App() {
         })
         .catch(() => {}); // Silent fail — preview still works
 
+      // Step 3: Generate personalised encouragement for confirmation page
+      const enc = await callClaude(
+        "You are Jinshi — AGI transitions coach. Write a single short paragraph (4-5 sentences) of warm, specific, personal encouragement for this person based on their job. Acknowledge the courage it takes to face this uncertainty. Make it feel like it was written just for them. No generic phrases. Sign off with: — Jinshi",
+        `The person's job: ${jobDesc}`
+      );
+      setEncouragement(enc);
+
       // Emails are generated and sent by the Cloudflare Worker backend
     } catch {
       setError("Something went wrong. Please try again.");
@@ -330,7 +338,8 @@ export default function App() {
   }
 
   const reset = () => {
-    setStage("form"); setAssessment(""); setActiveTab("assessment"); setError(""); setEmailsEnrolled(false);
+    setStage("form"); setAssessment(""); setActiveTab("assessment"); setError("");
+    setEmailsEnrolled(false); setEncouragement("");
     setPhaseEmails({ phase1: [], phase2: [], phase3: [], phase4: [] });
     setPhaseStatus({ phase1: "idle", phase2: "idle", phase3: "idle", phase4: "idle" });
     setOpenEmail(null);
@@ -516,8 +525,69 @@ export default function App() {
 
 
 
-            <button onClick={reset} style={{ background:"transparent",border:"none",color:"#252318",fontSize:11,letterSpacing:".2em",textTransform:"uppercase",display:"block",margin:"52px auto 0",transition:"color .2s" }}
-              onMouseEnter={e=>e.target.style.color="#d4cfc8"} onMouseLeave={e=>e.target.style.color="#252318"}>← assess a different role</button>
+            {/* Continue to confirmation */}
+            <div style={{ textAlign:"center",marginTop:48 }}>
+              <button onClick={() => setStage("confirm")}
+                style={{ background:"#e05252",border:"none",color:"#fff",fontSize:11,letterSpacing:".25em",textTransform:"uppercase",padding:"16px 40px",transition:"all .2s" }}
+                onMouseEnter={e=>e.target.style.background="#c43f3f"}
+                onMouseLeave={e=>e.target.style.background="#e05252"}>
+                What happens next →
+              </button>
+              <div style={{ marginTop:20 }}>
+                <button onClick={reset} style={{ background:"transparent",border:"none",color:"#3a3830",fontSize:10,letterSpacing:".2em",textTransform:"uppercase",transition:"color .2s" }}
+                  onMouseEnter={e=>e.target.style.color="#d4cfc8"} onMouseLeave={e=>e.target.style.color="#3a3830"}>← assess a different role</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══ CONFIRM ══ */}
+        {stage === "confirm" && (
+          <div className="fade-in" style={{ maxWidth:720,margin:"0 auto",padding:"72px 24px 100px",width:"100%",textAlign:"center" }}>
+
+            {/* Icon */}
+            <div style={{ fontSize:56,marginBottom:32,animation:"pulse 3s ease infinite" }}>◈</div>
+
+            {/* Enrolled status */}
+            <p style={{ fontSize:10,letterSpacing:".3em",textTransform:"uppercase",color:"#52e0a4",marginBottom:20 }}>
+              {emailsEnrolled ? "✓ You're enrolled" : "◈ Programme generating"}
+            </p>
+
+            <h2 style={{ fontFamily:"Playfair Display,serif",fontSize:"clamp(26px,5vw,48px)",fontWeight:900,color:"#f0ebe3",lineHeight:1.15,marginBottom:32 }}>
+              Your first email<br />is on its way.
+            </h2>
+
+            {/* Email confirmation */}
+            <div style={{ background:"rgba(82,224,164,.05)",border:"1px solid rgba(82,224,164,.15)",padding:"20px 28px",marginBottom:40,display:"inline-block",textAlign:"left",width:"100%" }}>
+              <div style={{ fontSize:10,letterSpacing:".25em",textTransform:"uppercase",color:"#52e0a4",marginBottom:10 }}>Your 100-day programme</div>
+              <div style={{ fontSize:14,color:"#a8a298",lineHeight:1.8 }}>
+                <div>✓ &nbsp;Day 1 email sent to <strong style={{ color:"#d4cfc8" }}>{userEmail}</strong></div>
+                <div style={{ marginTop:6 }}>✓ &nbsp;28 coaching emails across 4 phases</div>
+                <div style={{ marginTop:6 }}>✓ &nbsp;Each email personalised to your exact role</div>
+                <div style={{ marginTop:6 }}>✓ &nbsp;Delivered automatically — nothing to set up</div>
+              </div>
+            </div>
+
+            {/* Personalised encouragement */}
+            {encouragement && (
+              <div style={{ background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.06)",borderLeft:"3px solid #e0a852",padding:"28px 32px",marginBottom:40,textAlign:"left",animation:"slideIn .5s ease" }}>
+                <div style={{ fontSize:10,letterSpacing:".25em",textTransform:"uppercase",color:"#e0a852",marginBottom:16 }}>A word from Jinshi</div>
+                <div style={{ fontSize:15,lineHeight:1.9,color:"#9a9490",whiteSpace:"pre-wrap" }}>{encouragement}</div>
+              </div>
+            )}
+
+            {/* Check spam note */}
+            <p style={{ fontSize:12,color:"#3a3830",letterSpacing:".08em",lineHeight:1.8,marginBottom:40 }}>
+              Check your spam folder if you don't see it within 5 minutes.<br />
+              Add <strong style={{ color:"#5a5850" }}>jinshi@contact.zoomfrez.xyz</strong> to your contacts to ensure delivery.
+            </p>
+
+            <button onClick={reset}
+              style={{ background:"transparent",border:"1px solid rgba(255,255,255,.08)",color:"#3a3830",fontSize:10,letterSpacing:".2em",textTransform:"uppercase",padding:"12px 28px",transition:"all .2s" }}
+              onMouseEnter={e=>{e.target.style.color="#d4cfc8";e.target.style.borderColor="rgba(255,255,255,.2)"}}
+              onMouseLeave={e=>{e.target.style.color="#3a3830";e.target.style.borderColor="rgba(255,255,255,.08)"}}>
+              ← assess a different role
+            </button>
           </div>
         )}
 
