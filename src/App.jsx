@@ -261,7 +261,7 @@ export default function App() {
                 </h1>
 
                 <p style={{ fontSize:17, color:"var(--text2)", lineHeight:1.8, marginBottom:36, maxWidth:440 }}>
-                  Get a frank, personalised assessment of how AGI will disrupt your career — then receive 28 coaching emails over 100 days to help you adapt before it's too late.
+                  Get a frank, personalised assessment of how AGI will disrupt your career, then receive 28 coaching emails over 100 days to help you adapt before it's too late.
                 </p>
 
                 <div className="hero-actions" style={{ display:"flex", alignItems:"center", gap:16, flexWrap:"wrap" }}>
